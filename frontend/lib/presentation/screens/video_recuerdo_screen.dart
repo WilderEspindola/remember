@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
+import 'package:uuid/uuid.dart';
+import '../../services/database_service.dart';
+import '../../data/models/memory_model.dart';
 
 class VideoRecuerdoScreen extends StatefulWidget {
   final List<String> fotosPaths;
@@ -14,44 +17,41 @@ class VideoRecuerdoScreen extends StatefulWidget {
 
 class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
   final ImagePicker _picker = ImagePicker();
-
+  
   bool _videoGrabado = false;
   String? _videoPath;
 
   @override
   void initState() {
     super.initState();
-    // Abrir la cámara DIRECTAMENTE al entrar a la pantalla
     _grabarVideo();
   }
 
   Future<void> _grabarVideo() async {
     try {
-      // Abrir la cámara nativa del celular para grabar video
       final XFile? video = await _picker.pickVideo(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
       );
-
+      
       if (video != null) {
         setState(() {
           _videoGrabado = true;
           _videoPath = video.path;
         });
-
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Video grabado correctamente')),
         );
       } else {
-        // Si el usuario cancela la grabación, volver atrás
         if (mounted) {
           Navigator.pop(context);
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
       if (mounted) {
         Navigator.pop(context);
       }
@@ -73,6 +73,27 @@ class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
   }
 
   void _guardarRecuerdo() {
+    if (_videoPath == null) return;
+
+    // Crear ID único
+    const uuid = Uuid();
+    final String id = uuid.v4();
+
+    // Guardar en base de datos
+    final memory = MemoryModel(
+      id: id,
+      createdAt: DateTime.now(),
+      objetoFotoFrontal: widget.fotosPaths[0],
+      objetoFotoIzquierda: widget.fotosPaths[1],
+      objetoFotoDerecha: widget.fotosPaths[2],
+      tipoRecuerdo: 'video',
+      contenidoPath: _videoPath!,
+      textoExtra: null,
+    );
+
+    DatabaseService().insertMemory(memory);
+    print('Recuerdo guardado: $id - video');
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -105,7 +126,6 @@ class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Si ya se grabó el video, mostrar pantalla de revisión
     if (_videoGrabado) {
       return Scaffold(
         appBar: AppBar(
@@ -133,7 +153,7 @@ class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),
-
+              
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -144,10 +164,7 @@ class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -158,17 +175,14 @@ class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],
               ),
-
+              
               const SizedBox(height: 40),
-
+              
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SizedBox(
@@ -178,10 +192,7 @@ class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
                     icon: const Icon(Icons.save),
                     label: const Text(
                       'GUARDAR RECUERDO',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.purple,
@@ -200,7 +211,6 @@ class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
       );
     }
 
-    // Mientras graba, mostrar un loading simple
     return const Scaffold(
       body: Center(
         child: Column(
@@ -213,12 +223,5 @@ class _VideoRecuerdoScreenState extends State<VideoRecuerdoScreen> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    // No necesitamos reiniciar aquí porque usamos ImagePicker (cámara nativa)
-    // Pero aseguramos que no haya conflictos
-    super.dispose();
   }
 }

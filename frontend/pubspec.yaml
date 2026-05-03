@@ -39,6 +39,9 @@ dependencies:
   path: ^1.9.0              # Para manejar rutas
   open_file: ^3.3.2
   image_picker: ^1.0.5
+  sqflite: ^2.3.0          # Base de datos SQLite
+  
+  uuid: ^4.3.3           # Para generar IDs únicos
 
 dev_dependencies:
   flutter_test:

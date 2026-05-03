@@ -1,5 +1,8 @@
 // lib/presentation/screens/texto_recuerdo_screen.dart
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+import '../../services/database_service.dart';
+import '../../data/models/memory_model.dart';
 
 class TextoRecuerdoScreen extends StatefulWidget {
   final List<String> fotosPaths;
@@ -29,6 +32,25 @@ class _TextoRecuerdoScreenState extends State<TextoRecuerdoScreen> {
     final texto = _textController.text;
     if (texto.isEmpty) return;
 
+    // Crear un ID único
+    const uuid = Uuid();
+    final String id = uuid.v4();
+
+    // Guardar en base de datos
+    final memory = MemoryModel(
+      id: id,
+      createdAt: DateTime.now(),
+      objetoFotoFrontal: widget.fotosPaths[0],
+      objetoFotoIzquierda: widget.fotosPaths[1],
+      objetoFotoDerecha: widget.fotosPaths[2],
+      tipoRecuerdo: 'texto',
+      contenidoPath: '', // No aplica para texto
+      textoExtra: texto,
+    );
+
+    DatabaseService().insertMemory(memory);
+
+    // Mostrar diálogo
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -46,10 +68,7 @@ class _TextoRecuerdoScreenState extends State<TextoRecuerdoScreen> {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                '"$texto"',
-                style: const TextStyle(fontSize: 14),
-              ),
+              child: Text('"$texto"', style: const TextStyle(fontSize: 14)),
             ),
             const SizedBox(height: 16),
             const Text('El recuerdo quedó oculto en tu objeto.'),

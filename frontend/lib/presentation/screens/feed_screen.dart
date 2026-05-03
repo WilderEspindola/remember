@@ -1,7 +1,8 @@
 // lib/presentation/screens/feed_screen.dart
 import 'package:flutter/material.dart';
 import 'guardar_recuerdo_screen.dart';
-import 'reencuentro_screen.dart';  // ← NUEVA IMPORTACIÓN
+import 'reencuentro_screen.dart'; // ← NUEVA IMPORTACIÓN
+import 'lista_recuerdos_screen.dart';
 
 class FeedScreen extends StatelessWidget {
   const FeedScreen({super.key});
@@ -12,10 +13,7 @@ class FeedScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'REMEMBER',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 2),
         ),
         centerTitle: true,
         elevation: 0,
@@ -54,6 +52,21 @@ class FeedScreen extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 30),
+            // Botón temporal para ver recuerdos guardados
+            _buildButton(
+              icon: Icons.list,
+              label: 'VER RECUERDOS',
+              color: Colors.grey,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ListaRecuerdosScreen(),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -77,9 +90,7 @@ class FeedScreen extends StatelessWidget {
         backgroundColor: color,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 18),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         elevation: 4,
       ),
     );

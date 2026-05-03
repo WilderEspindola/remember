@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
+import 'package:uuid/uuid.dart';
+import '../../services/database_service.dart';
+import '../../data/models/memory_model.dart';
 
 class FotoRecuerdoScreen extends StatefulWidget {
   final List<String> fotosPaths;
@@ -21,13 +24,11 @@ class _FotoRecuerdoScreenState extends State<FotoRecuerdoScreen> {
   @override
   void initState() {
     super.initState();
-    // Abrir la cámara DIRECTAMENTE al entrar a la pantalla
     _tomarFoto();
   }
 
   Future<void> _tomarFoto() async {
     try {
-      // Abrir la cámara nativa del celular para tomar foto
       final XFile? foto = await _picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
@@ -43,7 +44,6 @@ class _FotoRecuerdoScreenState extends State<FotoRecuerdoScreen> {
           const SnackBar(content: Text('Foto tomada correctamente')),
         );
       } else {
-        // Si el usuario cancela la toma, volver atrás
         if (mounted) {
           Navigator.pop(context);
         }
@@ -73,19 +73,40 @@ class _FotoRecuerdoScreenState extends State<FotoRecuerdoScreen> {
   }
 
   void _guardarRecuerdo() {
+    if (_fotoPath == null) return;
+
+    // Crear ID único
+    const uuid = Uuid();
+    final String id = uuid.v4();
+
+    // Guardar en base de datos
+    final memory = MemoryModel(
+      id: id,
+      createdAt: DateTime.now(),
+      objetoFotoFrontal: widget.fotosPaths[0],
+      objetoFotoIzquierda: widget.fotosPaths[1],
+      objetoFotoDerecha: widget.fotosPaths[2],
+      tipoRecuerdo: 'foto',
+      contenidoPath: _fotoPath!,
+      textoExtra: null,
+    );
+
+    DatabaseService().insertMemory(memory);
+    print('Recuerdo guardado: $id - foto');
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¡Recuerdo guardado!'),
-        content: Column(
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('📷 ${widget.fotosPaths.length} fotos del objeto'),
-            const Text('💾 Formato: FOTO'),
-            const Text('📸 Foto guardada correctamente'),
-            const SizedBox(height: 16),
-            const Text('El recuerdo quedó oculto en tu objeto.'),
+            Text('📷 3 fotos del objeto'),
+            Text('💾 Formato: FOTO'),
+            Text('📸 Foto guardada correctamente'),
+            SizedBox(height: 16),
+            Text('El recuerdo quedó oculto en tu objeto.'),
           ],
         ),
         actions: [
@@ -105,7 +126,6 @@ class _FotoRecuerdoScreenState extends State<FotoRecuerdoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Si ya se tomó la foto, mostrar pantalla de revisión
     if (_fotoTomada) {
       return Scaffold(
         appBar: AppBar(
@@ -203,7 +223,6 @@ class _FotoRecuerdoScreenState extends State<FotoRecuerdoScreen> {
       );
     }
 
-    // Mientras toma la foto, mostrar un loading simple
     return const Scaffold(
       body: Center(
         child: Column(
